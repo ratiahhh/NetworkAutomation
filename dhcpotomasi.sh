@@ -1,10 +1,18 @@
 #!/bin/bash
 
-# Pastikan script dijalankan sebagai root
-if [ "$EUID" -ne 0 ]; then
-  echo -e "\033[31mJalankan script ini sebagai root!\033[0m"
-  exit 1
-fi
+# Variabel Konfigurasi
+VLAN_INTERFACE="eth1.10"
+VLAN_ID=10
+IP_ADDR="192.168.6.1/24"      # IP address untuk interface VLAN di Ubuntu
+DHCP_CONF="/etc/dhcp/dhcpd.conf"
+SWITCH_IP="192.168.6.35"       # IP Cisco Switch yang akan dikonfigurasi
+MIKROTIK_IP="192.168.200.1"     # IP MikroTik yang baru
+USER_SWITCH="root"              # Username SSH untuk Cisco Switch
+USER_MIKROTIK="admin"           # Username SSH default MikroTik
+PASSWORD_SWITCH="root"          # Password untuk Cisco Switch
+PASSWORD_MIKROTIK=""            # Kosongkan jika MikroTik tidak punya password
+
+set -e
 
 # Warna untuk tampilan
 RED='\033[31m'
@@ -13,19 +21,6 @@ YELLOW='\033[33m'
 BLUE='\033[34m'
 CYAN='\033[36m'
 RESET='\033[0m'
-
-# Fungsi untuk memastikan interface jaringan aktif
-check_network_status() {
-  local interface=$1
-  status=$(ip link show "$interface" | grep "state UP")
-  if [ -z "$status" ]; then
-    echo -e "${YELLOW}Interface $interface tidak aktif, mencoba mengaktifkannya...${RESET}"
-    ip link set "$interface" up
-    sleep 1
-  else
-    echo -e "${GREEN}Interface $interface sudah aktif.${RESET}"
-  fi
-}
 
 # Fungsi untuk menampilkan pesan sukses atau gagal
 print_status() {
@@ -37,87 +32,74 @@ print_status() {
   fi
 }
 
-echo -e "${CYAN}==> Memastikan jaringan dalam keadaan UP...${RESET}"
-check_network_status eth0
-check_network_status eth1
+echo -e "${CYAN}Skrip Otomasi Ubuntu dimulai. Siapkan sistem Anda untuk otomatisasi konfigurasi!${RESET}"
 
-echo -e "${CYAN}==> Update dan install paket yang diperlukan...${RESET}"
-DEBIAN_FRONTEND=noninteractive apt update -y &>/dev/null && apt install -y isc-dhcp-server vlan net-tools apache2 php libapache2-mod-php &>/dev/null
-print_status
+# 1. Menambahkan Repositori Kartolo
+echo -e "${BLUE}Menambahkan repositori Kartolo ke sumber apt...${RESET}"
+cat <<EOF | sudo tee /etc/apt/sources.list
+deb http://kartolo.sby.datautama.net.id/ubuntu/ focal main restricted universe multiverse
+deb http://kartolo.sby.datautama.net.id/ubuntu/ focal-updates main restricted universe multiverse
+deb http://kartolo.sby.datautama.net.id/ubuntu/ focal-security main restricted universe multiverse
+deb http://kartolo.sby.datautama.net.id/ubuntu/ focal-backports main restricted universe multiverse
+deb http://kartolo.sby.datautama.net.id/ubuntu/ focal-proposed main restricted universe multiverse
+EOF
 
-echo -e "${CYAN}==> Membuat konfigurasi Netplan untuk VLAN...${RESET}"
-cat <<EOF > /etc/netplan/01-netcfg.yaml
+sudo apt update
+sudo apt install sshpass -y
+sudo apt install -y isc-dhcp-server iptables iptables-persistent
+
+# 2. Konfigurasi VLAN di Ubuntu Server
+echo -e "${YELLOW}Membuat VLAN di Ubuntu Server...${RESET}"
+ip link add link eth1 name $VLAN_INTERFACE type vlan id $VLAN_ID
+ip addr add $IP_ADDR dev $VLAN_INTERFACE
+ip link set up dev $VLAN_INTERFACE
+
+# 3. Konfigurasi DHCP Server
+echo -e "${CYAN}Mengonfigurasi DHCP Server...${RESET}"
+cat <<EOL | sudo tee $DHCP_CONF
+# Konfigurasi subnet untuk VLAN 10
+subnet 192.168.6.0 netmask 255.255.255.0 {
+    range 192.168.6.10 192.168.6.100;
+    option routers 192.168.6.1;
+    option subnet-mask 255.255.255.0;
+    option domain-name-servers 8.8.8.8, 8.8.4.4;
+    option domain-name "example.local";
+}
+EOL
+
+cat <<EOF | sudo tee /etc/netplan/01-netcfg.yaml
 network:
   version: 2
   ethernets:
     eth0:
-      dhcp4: true
+     dhcp4: true
     eth1:
-      dhcp4: false
+      dhcp4: no
   vlans:
-    vlan10:
-      id: 10
-      link: eth1
-      addresses:
-        - 192.168.10.1/24
-EOF
-print_status
-
-echo -e "${CYAN}==> Menerapkan konfigurasi Netplan...${RESET}"
-netplan try &>/dev/null && netplan apply
-print_status
-
-echo -e "${CYAN}==> Menyiapkan konfigurasi DHCP server...${RESET}"
-cat <<EOF > /etc/dhcp/dhcpd.conf
-subnet 192.168.10.0 netmask 255.255.255.0 {
-  range 192.168.10.100 192.168.10.200;
-  option routers 192.168.10.1;
-  option broadcast-address 192.168.10.255;
-}
-EOF
-print_status
-
-echo -e "${CYAN}==> Restarting DHCP server...${RESET}"
-systemctl restart isc-dhcp-server
-if ! systemctl is-active --quiet isc-dhcp-server; then
-  echo -e "${RED}✘ Gagal memulai DHCP server. Periksa konfigurasi di /etc/dhcp/dhcpd.conf.${RESET}"
-  exit 1
-fi
-echo -e "${GREEN}✔ DHCP server berhasil dijalankan.${RESET}"
-
-echo -e "${CYAN}==> Menginstal Kartolo Monitoring Dashboard...${RESET}"
-cd /var/www/html
-if [ ! -d "kartolo" ]; then
-  git clone https://github.com/kartolo-framework/kartolo.git kartolo &>/dev/null
-  print_status
-else
-  echo -e "${YELLOW}Kartolo sudah ada di /var/www/html/kartolo. Melewati langkah ini.${RESET}"
-fi
-
-echo -e "${CYAN}==> Konfigurasi Apache untuk Kartolo...${RESET}"
-cat <<EOF > /etc/apache2/sites-available/kartolo.conf
-<VirtualHost *:80>
-    ServerAdmin admin@example.com
-    DocumentRoot /var/www/html/kartolo
-    <Directory /var/www/html/kartolo>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
+     eth1.10:
+       id: 10
+       link: eth1
+       addresses: [192.168.6.1/24]
 EOF
 
-a2ensite kartolo &>/dev/null
-a2enmod rewrite &>/dev/null
-systemctl reload apache2
-print_status
+sudo netplan apply
 
-echo -e "${CYAN}==> Membersihkan cache dan file sementara...${RESET}"
-apt autoremove -y &>/dev/null
-apt clean &>/dev/null
-print_status
+# Restart DHCP server untuk menerapkan konfigurasi baru
+echo -e "${CYAN}Merestart DHCP server...${RESET}"
+sudo systemctl restart isc-dhcp-server
+sudo systemctl status isc-dhcp-server
 
-echo -e "${GREEN}✔ Semua konfigurasi selesai!${RESET}"
-echo -e "${BLUE}Anda dapat mengakses Kartolo Monitoring Dashboard di: http://<IP-server-Anda>${RESET}"
+# 4. Konfigurasi Routing di Ubuntu Server
+echo -e "${YELLOW}Menambahkan routing ke jaringan MikroTik...${RESET}"
+ip route add 192.168.200.0/24 via $MIKROTIK_IP
+
+# 5. Panggil Skrip Konfigurasi Cisco Switch (terpisah file)
+echo -e "${BLUE}Mengonfigurasi Cisco Switch...${RESET}"
+bash ./cisco_config.sh
+
+# 6. Panggil Skrip Konfigurasi MikroTik (terpisah file)
+echo -e "${CYAN}Mengonfigurasi MikroTik...${RESET}"
+bash ./mikrotik_config.sh
+
+echo -e "${GREEN}Skrip selesai! Konfigurasi berhasil diterapkan.${RESET}"
+
