@@ -1,13 +1,12 @@
 #!/bin/bash
 
 # Variabel Konfigurasi
-SWITCH_IP="192.168.31.35"       # IP Cisco Switch (diubah sesuai permintaan)
-USER_SWITCH="root"             # Username SSH untuk Cisco Switch
-PASSWORD_SWITCH="root"         # Password untuk Cisco Switch
+SWITCH_IP="192.168.31.35"       
+USER_SWITCH="root"             
+PASSWORD_SWITCH="root"         
 VLAN_ID=10
 VLAN_NAME="VLAN10"
-INTERFACE="e0/1"               # Port yang digunakan di Cisco Switch
-
+INTERFACE="e0/1"               
 # Warna untuk tampilan
 RED='\033[31m'
 GREEN='\033[32m'
