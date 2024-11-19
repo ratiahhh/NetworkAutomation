@@ -104,18 +104,5 @@ sudo systemctl restart isc-dhcp-server
 sudo systemctl status isc-dhcp-server
 print_status
 
-# 8. Konfigurasi Routing di Ubuntu Server
-echo -e "${YELLOW}Menambahkan routing ke jaringan MikroTik...${RESET}"
-ip route add 192.168.200.0/24 via $MIKROTIK_IP
-print_status
-
-# 9. Panggil Skrip Konfigurasi Cisco Switch (terpisah file)
-echo -e "${BLUE}Mengonfigurasi Cisco Switch...${RESET}"
-bash ./cisco_config.sh
-
-# 10. Panggil Skrip Konfigurasi MikroTik (terpisah file)
-echo -e "${CYAN}Mengonfigurasi MikroTik...${RESET}"
-bash ./mikrotik_config.sh
-
 echo -e "${GREEN}Skrip selesai! Konfigurasi berhasil diterapkan.${RESET}"
 
