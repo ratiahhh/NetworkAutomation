@@ -1,15 +1,13 @@
 # Parameter koneksi ke Cisco Switch
 cisco_switch = {
     'device_type': 'cisco_ios',
-    'host': '192.168.31.2',  # Ganti dengan IP Cisco Switch Anda
-    'username': 'admin',     # Ganti dengan username switch
-    'password': 'password',  # Ganti dengan password switch
+    'host': '192.168.31.2',  
 }
 
 # Konfigurasi VLAN dan Interface
 vlan_id = 10
 vlan_name = 'VLAN10'
-interface = 'Ethernets1'  # Ganti dengan interface sesuai topologi Anda
+interface = 'Ethernets1'  
 
 try:
     # Membuka koneksi ke switch
