@@ -109,5 +109,5 @@ echo -e "${YELLOW}Menambahkan routing ke jaringan MikroTik...${RESET}"
 ip route add 192.168.200.0/24 via $MIKROTIK_IP
 print_status
 
-echo -e "${GREEN}Skrip selesai! Konfigurasi berhasil diterapkan.${RESET}"
+echo -e "${GREEN}selesaii! Konfigurasi berhasil diterapkan.${RESET}"
 
