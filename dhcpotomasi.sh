@@ -5,12 +5,12 @@ VLAN_INTERFACE="eth1.10"
 VLAN_ID=10
 IP_ADDR="192.168.31.1/24"      # IP address untuk interface VLAN di Ubuntu
 DHCP_CONF="/etc/dhcp/dhcpd.conf"
-SWITCH_IP="192.168.31.35"       # IP Cisco Switch yang akan dikonfigurasi
-MIKROTIK_IP="192.168.200.1"     # IP MikroTik yang baru
-USER_SWITCH="root"              # Username SSH untuk Cisco Switch
+SWITCH_IP="192.168.31.35/24"       # IP Cisco Switch yang akan dikonfigurasi
+MIKROTIK_IP="192.168.157.135/24"     # IP MikroTik yang baru
+USER_SWITCH=""              # Username SSH untuk Cisco Switch
 USER_MIKROTIK="admin"           # Username SSH default MikroTik
-PASSWORD_SWITCH="root"          # Password untuk Cisco Switch
-PASSWORD_MIKROTIK=""            # Kosongkan jika MikroTik tidak punya password
+PASSWORD_SWITCH=""          # Password untuk Cisco Switch
+PASSWORD_MIKROTIK="123"            # Kosongkan jika MikroTik tidak punya password
 
 set -e
 
@@ -51,7 +51,7 @@ sudo apt install -y isc-dhcp-server iptables iptables-persistent
 # 2. Menyiapkan dan Mengaktifkan Interface Ethernet
 echo -e "${YELLOW}Memeriksa dan mengaktifkan interface ethernet...${RESET}"
 ip link set eth0 up
-ip link set eth1 up
+ip link set eth1.10 up
 print_status
 
 # 3. Mengkonfigurasi VLAN di Ubuntu Server
@@ -106,7 +106,7 @@ print_status
 
 # 8. Konfigurasi Routing di Ubuntu Server
 echo -e "${YELLOW}Menambahkan routing ke jaringan MikroTik...${RESET}"
-ip route add 192.168.200.0/24 via 192.168.157.0
+ip route add 192.168.157.135/24 via 192.168.157.0
 print_status
 
 echo -e "${GREEN}selesaii! Konfigurasi berhasil diterapkan.${RESET}"
