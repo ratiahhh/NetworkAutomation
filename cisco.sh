@@ -1,38 +1,32 @@
-# Parameter koneksi ke Cisco Switch
-cisco_switch = {
-    'device_type': 'cisco_ios',
-    'host': '192.168.31.2',  
-}
+#!/bin/bash
 
-# Konfigurasi VLAN dan Interface
-vlan_id = 10
-vlan_name = 'VLAN10'
-interface = 'Ethernets1'  
+# Variabel untuk konfigurasi Cisco Switch
+SWITCH_IP="192.168.31.2"       # Ganti dengan IP Switch Cisco
+USER_SWITCH="admin"            # Ganti dengan username switch
+PASSWORD_SWITCH="password"     # Ganti dengan password switch
+VLAN_ID=10                     # ID VLAN yang akan dibuat
+VLAN_NAME="VLAN10"             # Nama VLAN
+INTERFACE="eth1"               # Interface yang akan dikonfigurasi
 
-try:
-    # Membuka koneksi ke switch
-    net_connect = ConnectHandler(cisco_switch)
+# Kirim perintah ke Cisco Switch menggunakan sshpass dan SSH
+sshpass -p "$PASSWORD_SWITCH" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $USER_SWITCH@$SWITCH_IP << EOF
+enable
+configure terminal
+vlan $VLAN_ID
+name $VLAN_NAME
+exit
+interface $INTERFACE
+switchport mode access
+switchport access vlan $VLAN_ID
+exit
+end
+write memory
+EOF
 
-    # Memasukkan perintah konfigurasi VLAN dan interface
-    config_commands = [
-        f'vlan {vlan_id}',
-        f'name {vlan_name}',
-        'exit',
-        f'interface {interface}',
-        'switchport mode access',
-        f'switchport access vlan {vlan_id}',
-        'exit',
-    ]
-    output = net_connect.send_config_set(config_commands)
-    print("Output konfigurasi Cisco Switch:")
-    print(output)
-
-    # Menyimpan konfigurasi
-    save_output = net_connect.save_config()
-    print("Konfigurasi berhasil disimpan.")
-    print(save_output)
-
-    # Menutup koneksi
-    net_connect.disconnect()
-except Exception as e:
-    print(f"✘ Gagal mengonfigurasi Cisco Switch: {e}")
+# Cek apakah konfigurasi berhasil
+if [ $? -eq 0 ]; then
+  echo "✔ Cisco Switch berhasil dikonfigurasi pada interface $INTERFACE."
+else
+  echo "✘ Gagal mengonfigurasi Cisco Switch. Periksa koneksi SSH atau konfigurasi VLAN."
+  exit 1
+fi
