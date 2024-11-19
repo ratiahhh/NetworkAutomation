@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Variabel Konfigurasi
-MIKROTIK_IP="192.168.31.1"      # IP MikroTik
+MIKROTIK_IP="192.168.31.34"      # IP MikroTik
 USER_MIKROTIK="admin"           # Username SSH untuk MikroTik
 PASSWORD_MIKROTIK="password"    # Password untuk MikroTik (kosongkan jika tidak ada password)
 VLAN_ID=10                      # VLAN ID yang ingin dibuat
 VLAN_NAME="vlan10"              # Nama VLAN
-IP_ADDR="192.168.31.1/24"       # IP untuk VLAN di MikroTik
+IP_ADDR="192.168.31.34/24"       # IP untuk VLAN di MikroTik
 GATEWAY_IP="192.168.31.1"       # Gateway VLAN
 INTERFACE="ether1"              # Interface MikroTik untuk VLAN
 
