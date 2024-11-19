@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Variabel untuk konfigurasi MikroTik
-MIKROTIK_IP="192.168.31.3"       # Ganti dengan IP MikroTik
+MIKROTIK_IP="192.168.157.135"       # Ganti dengan IP MikroTik
 USER_MIKROTIK="admin"            # Ganti dengan username MikroTik
-PASSWORD_MIKROTIK="password"     # Ganti dengan password MikroTik
+PASSWORD_MIKROTIK="123"     # Ganti dengan password MikroTik
 VLAN_ID=10                       # ID VLAN
 VLAN_NAME="VLAN10"               # Nama VLAN
 INTERFACE="eth1"                 # Interface yang akan dikonfigurasi
