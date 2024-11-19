@@ -32,7 +32,7 @@ print_status() {
   fi
 }
 
-echo -e "${CYAN}Skrip Otomasi Ubuntu dimulai. Siapkan sistem Anda untuk otomatisasi konfigurasi!${RESET}"
+echo -e "${CYAN}Skrip Otomasi Ubuntu dimulai!${RESET}"
 
 # 1. Menambahkan Repositori Kartolo
 echo -e "${BLUE}Menambahkan repositori Kartolo ke sumber apt...${RESET}"
@@ -54,7 +54,7 @@ ip link set eth0 up
 ip link set eth1 up
 print_status
 
-# 3. Konfigurasi VLAN di Ubuntu Server
+# 3. Mengkonfigurasi VLAN di Ubuntu Server
 echo -e "${YELLOW}Membuat VLAN di Ubuntu Server...${RESET}"
 ip link add link eth1 name $VLAN_INTERFACE type vlan id $VLAN_ID
 ip addr add $IP_ADDR dev $VLAN_INTERFACE
@@ -66,7 +66,7 @@ echo -e "${CYAN}Mengonfigurasi DHCP Server...${RESET}"
 cat <<EOL | sudo tee $DHCP_CONF
 # Konfigurasi subnet untuk VLAN 10
 subnet 192.168.31.0 netmask 255.255.255.0 {
-    range 192.168.31.10 192.168.6.100;
+    range 192.168.31.10 192.168.31.100;
     option routers 192.168.31.1;
     option subnet-mask 255.255.255.0;
     option domain-name-servers 8.8.8.8, 8.8.4.4;
