@@ -9,7 +9,7 @@ VLAN_NAME="VLAN10"               # Nama VLAN
 INTERFACE="eth1"                 # Interface yang akan dikonfigurasi
 
 # Kirim perintah ke MikroTik menggunakan sshpass dan SSH
-sshpass -p "$PASSWORD_MIKROTIK" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $USER_MIKROTIK@$MIKROTIK_IP << EOF
+sshpass -p "" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $USER_MIKROTIK@$MIKROTIK_IP << EOF
 /interface vlan
 add name=$VLAN_NAME vlan-id=$VLAN_ID interface=$INTERFACE
 /ip address
