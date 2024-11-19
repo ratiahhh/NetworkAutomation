@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Variabel untuk konfigurasi Cisco Switch
-SWITCH_IP="192.168.31.2"       # Ganti dengan IP Switch Cisco
-USER_SWITCH="admin"            # Ganti dengan username switch
-PASSWORD_SWITCH="password"     # Ganti dengan password switch
+SWITCH_IP="192.168.31.4"       # Ganti dengan IP Switch Cisco
+USER_SWITCH=""            # Ganti dengan username switch
+PASSWORD_SWITCH=""     # Ganti dengan password switch
 VLAN_ID=10                     # ID VLAN yang akan dibuat
 VLAN_NAME="VLAN10"             # Nama VLAN
 INTERFACE="e1"                 # Interface yang akan dikonfigurasi
