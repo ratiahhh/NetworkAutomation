@@ -4,8 +4,8 @@ import time
 # Konfigurasi perangkat Cisco
 cisco_device = {
     "device_type": "cisco_ios",  # Tipe perangkat Cisco
-    "host": "192.168.31.2",     # IP perangkat Cisco
-    "port": "22",                 # Port SSH default
+    "host": "192.168.31.2:22",     # IP perangkat Cisco
+    "port": 22,                 # Port SSH default
     "username": "",             # Kosong karena tidak menggunakan autentikasi username
     "password": "",             # Kosong karena tidak menggunakan autentikasi password
 }
