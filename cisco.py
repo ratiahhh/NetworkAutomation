@@ -3,10 +3,7 @@ from netmiko import ConnectHandler, NetMikoTimeoutException, NetMikoAuthenticati
 # Konfigurasi koneksi ke switch
 switch_config = {
     'device_type': 'cisco_ios',
-    'host': '192.168.20.1',  # Ganti dengan IP switch
-    'username': '',          # Biarkan kosong jika belum ada username
-    'password': '',          # Biarkan kosong jika belum ada password
-    'secret': '',            # Biarkan kosong jika belum ada enable password
+    'host': '192.168.31.1',  # Ganti dengan IP switch
     'port': 22,              # Port default SSH
 }
 
@@ -22,7 +19,7 @@ config_commands = [
     "login local",                            # Gunakan username/password lokal
     "exit",                                   # Keluar dari konfigurasi
     "interface vlan 1",                       # Masukkan VLAN 1
-    "ip address 192.168.20.1 255.255.255.0",  # Atur IP VLAN untuk manajemen
+    "ip address 192.168.31.1 255.255.255.0",  # Atur IP VLAN untuk manajemen
     "no shutdown",                            # Aktifkan interface VLAN
     "write memory",                           # Simpan konfigurasi
 ]
