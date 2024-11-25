@@ -67,3 +67,9 @@ sudo apt install iptables-persistent
 
 #install sshpass
 sudo apt install sshpass 
+
+#install python
+sudo apt install python3 python3-pip -y
+
+#install netmiko
+sudo pip3 install netmiko
