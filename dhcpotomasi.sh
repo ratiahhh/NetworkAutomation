@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Otomasi Dimulai
-echo "Otomasi WaK"
-
+echo "Memulai Otomasi Ubuntu DHCP Server dan SSH"
 
 # Repo Kartolo
 cat <<EOF | sudo tee /etc/apt/sources.list
@@ -15,8 +14,7 @@ EOF
 
 sudo apt update
 
-
-# Netplan Lamine Yamal
+# Konfigurasi Network (Netplan)
 cat <<EOT > /etc/netplan/01-netcfg.yaml
 network:
   version: 2
@@ -27,24 +25,22 @@ network:
     eth1:
       dhcp4: no
   vlans:
-   eth1.10:
-     id: 10
-     link: eth1
-     addresses:
-      - 192.168.31.1/24
+    eth1.10:
+      id: 10
+      link: eth1
+      addresses:
+        - 192.168.31.1/24
 EOT
 netplan apply
 
-#install isc-dhcp-server
-sudo apt install isc-dhcp-server 
+# Instalasi ISC DHCP Server
+sudo apt install isc-dhcp-server -y
 
-# Dhcp
-sudo bash -c 'cat > /etc/dhcp/dhcpd.conf' << EOF
-# A slightly different configuration for an internal subnet.
+# Konfigurasi DHCP Server
+cat <<EOF | sudo tee /etc/dhcp/dhcpd.conf
 subnet 192.168.31.0 netmask 255.255.255.0 {
   range 192.168.31.2 192.168.31.254;
   option domain-name-servers 8.8.8.8;
-#  option domain-name "internal.example.org";
   option subnet-mask 255.255.255.0;
   option routers 192.168.31.1;
   option broadcast-address 192.168.31.255;
@@ -53,23 +49,29 @@ subnet 192.168.31.0 netmask 255.255.255.0 {
 }
 EOF
 
-# Config isc-dhcp-server
-echo 'INTERFACESv4="eth1.10"' > /etc/default/isc-dhcp-server
-systemctl restart isc-dhcp-server
+# Konfigurasi ISC DHCP Server untuk VLAN
+echo 'INTERFACESv4="eth1.10"' | sudo tee /etc/default/isc-dhcp-server
+sudo systemctl restart isc-dhcp-server
 
-# Ip forward
+# Aktifkan IP Forwarding
 sudo sed -i '/^#net.ipv4.ip_forward=1/s/^#//' /etc/sysctl.conf
 sudo sysctl -p
 
-# Masquerade 
+# NAT Masquerading
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-sudo apt install iptables-persistent 
+sudo apt install iptables-persistent -y
 
-#install sshpass
-sudo apt install sshpass 
+# Instal SSH Server
+sudo apt install openssh-server -y
+sudo systemctl enable ssh
+sudo systemctl restart ssh
 
-#install python
+# Buka Port SSH di Firewall
+sudo ufw allow ssh
+sudo ufw enable
+
+# Instalasi Tambahan untuk Netmiko
 sudo apt install python3 python3-pip -y
+pip3 install netmiko
 
-#install netmiko
-sudo pip3 install netmiko
+echo "Konfigurasi Ubuntu selesai. DHCP Server, SSH, dan NAT siap digunakan."
