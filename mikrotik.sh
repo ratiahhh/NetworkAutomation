@@ -1,30 +1,53 @@
-#!/bin/bash
+#!/bin/sh
 
-# Instal sshpass jika belum tersedia
-echo "Memastikan sshpass terpasang..."
-apt update && apt install -y sshpass
+apt install expect -y
+apt install telnet 
 
-# Variabel konfigurasi
-MIKROTIK_IP="192.168.31.254"   # IP untuk MikroTik
-USERNAME="admin"              # Username MikroTik
-PASSWORD="password"           # Password MikroTik
+MIKROTIK_USER="admin"
+MIKROTIK_PASS="123"
+MIKROTIK_IP="192.168.31.10"
 
-# Skrip konfigurasi MikroTik
-echo "Mengirim konfigurasi ke MikroTik..."
-sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$MIKROTIK_IP << EOF
-/interface vlan
-add interface=ether2 name=vlan10 vlan-id=10
+expect << EOF
+spawn telnet $MIKROTIK_IP
+expect "login:"
+send "$MIKROTIK_USER\r"
+expect "Password:"
+send "$MIKROTIK_PASS\r"
+expect ">"
 
-/ip address
-add address=192.168.31.254/24 interface=vlan10
+# Menambahkan DHCP Client di ether1
+send "/interface dhcp-client add interface=ether1 disabled=no\r"
+expect ">"
 
-/ip dhcp-client
-add interface=ether1 disabled=no
+# Menambahkan IP address di ether2
+send "/ip address add address=192.168.200.1/24 interface=ether2\r"
+expect ">"
 
-/ip route
-add dst-address=0.0.0.0/0 gateway=192.168.31.1
+# Membuat IP pool
+send "/ip pool add name=dhcp_pool ranges=192.168.200.10-192.168.200.100\r"
+expect ">"
 
-/system reboot
+# Menambahkan DHCP Server
+send "/ip dhcp-server add name=dhcp1 interface=ether2 address-pool=dhcp_pool disabled=no\r"
+expect ">"
+
+# Menambahkan konfigurasi network DHCP Server
+send "/ip dhcp-server network add address=192.168.200.0/24 gateway=192.168.200.1\r"
+expect ">"
+# Menambahkan konfigurasi network DHCP Server
+send "/ip dhcp-server enable dhcp1"
+expect ">"
+
+# Menambahkan static route ke Ubuntu Server
+send "/ip route add gateway=192.168.31.1\r"
+expect ">"
+
+# Menambahkan aturan firewall NAT untuk internet sharing
+send "/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade\r"
+expect ">"
+
+
+# Keluar dari MikroTik
+send "exit\r"
+expect eof
 EOF
-
-echo "Konfigurasi MikroTik selesai! MikroTik akan reboot untuk menerapkan konfigurasi."
