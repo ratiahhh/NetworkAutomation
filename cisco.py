@@ -1,54 +1,44 @@
-from netmiko import ConnectHandler, NetMikoTimeoutException, NetMikoAuthenticationException
+from netmiko import ConnectHandler
 
-# Konfigurasi koneksi ke switch
-switch_config = {
-    'device_type': 'cisco_ios',
-    'host': '192.168.31.1',  # Ganti dengan IP switch
-    'port': 22,              # Port default SSH
+# Konfigurasi perangkat Cisco
+cisco_device = {
+    "device_type": "cisco_ios",
+    "host": "192.168.31.2",  # Ganti dengan IP perangkat Cisco
 }
 
-# Perintah untuk mengaktifkan SSH secara otomatis
-config_commands = [
-    "hostname Switch1",                       # Ubah hostname
-    "ip domain-name example.com",             # Tentukan domain-name
-    "crypto key generate rsa modulus 1024",   # Buat kunci RSA
-    "ip ssh version 2",                       # Gunakan SSH versi 2
-    "username admin privilege 15 secret adminpassword",  # Buat user admin
-    "line vty 0 4",                           # Konfigurasi VTY untuk SSH
-    "transport input ssh",                    # Hanya izinkan SSH
-    "login local",                            # Gunakan username/password lokal
-    "exit",                                   # Keluar dari konfigurasi
-    "interface vlan 1",                       # Masukkan VLAN 1
-    "ip address 192.168.31.1 255.255.255.0",  # Atur IP VLAN untuk manajemen
-    "no shutdown",                            # Aktifkan interface VLAN
-    "write memory",                           # Simpan konfigurasi
+# Parameter VLAN
+vlan_id = 10
+vlan_ip = "192.168.31.2"
+vlan_subnet_mask = "255.255.255.0"
+default_gateway = "192.168.31.1"
+
+# Perintah konfigurasi untuk perangkat Cisco
+commands = [
+    "conf t",
+    f"vlan {vlan_id}",
+    "exit",
+    f"interface vlan {vlan_id}",
+    f"ip address {vlan_ip} {vlan_subnet_mask}",
+    "no shutdown",
+    f"ip default-gateway {default_gateway}",
+    "interface GigabitEthernet0/1",  # Port yang digunakan, ganti sesuai topologi
+    "switchport mode access",
+    f"switchport access vlan {vlan_id}",
+    "no shutdown",
+    "exit",
+    "write memory",
 ]
 
-def configure_ssh():
-    try:
-        print("Menghubungkan ke switch...")
-        connection = ConnectHandler(**switch_config)
-
-        # Masuk ke mode enable jika diperlukan
-        connection.enable()
-
-        print("Koneksi berhasil! Memulai konfigurasi...")
-        # Kirim perintah konfigurasi
-        output = connection.send_config_set(config_commands)
-        print(output)
-
-        print("Konfigurasi selesai. Menyimpan konfigurasi...")
-        save_output = connection.save_config()
-        print(save_output)
-
-        connection.disconnect()
-        print("Koneksi ditutup.")
-    except NetMikoTimeoutException:
-        print("Kesalahan: Tidak dapat terhubung ke switch. Periksa IP address atau jaringan.")
-    except NetMikoAuthenticationException:
-        print("Kesalahan: Autentikasi gagal. Periksa username/password.")
-    except Exception as e:
-        print(f"Kesalahan lain: {e}")
-
-if __name__ == "__main__":
-    configure_ssh()
+# Koneksi ke perangkat Cisco dan eksekusi perintah
+try:
+    print("Menghubungkan ke perangkat Cisco...")
+    net_connect = ConnectHandler(**cisco_device)
+    print("Berhasil terhubung. Mengirim konfigurasi...")
+    output = net_connect.send_config_set(commands)
+    print(output)
+    print("Konfigurasi selesai. Menyimpan konfigurasi...")
+    net_connect.save_config()
+    print("Konfigurasi berhasil disimpan.")
+    net_connect.disconnect()
+except Exception as e:
+    print(f"Terjadi kesalahan: {e}")
