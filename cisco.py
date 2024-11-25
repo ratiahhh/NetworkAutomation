@@ -13,15 +13,15 @@ cisco_device = {
 # Perintah konfigurasi SSH, VLAN, dan lainnya
 commands = [
     "conf t",
-    "hostname Router",                            
+    "hostname Switch",                            
     "ip domain-name local",                      
-    "crypto key generate rsa modulus 1024",      
+    "crypto key generate rsa modulus 3077",      
     "ip ssh version 2",                           
     "line vty 0 4",                               
     "transport input ssh",
     "no login",
     "exit",
-    "vlan 10",
+    f"vlan 10",
     "exit",
     "interface ethernet0/0",
     "switch trunk encapsulation dot1q",
