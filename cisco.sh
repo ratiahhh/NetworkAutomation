@@ -60,6 +60,6 @@ net_connect.disconnect()
 EOF
 
 # Jalankan Python script untuk Cisco
-python3 cisco_config.py
+python3 cisco.py
 
 echo "Konfigurasi Cisco selesai."
