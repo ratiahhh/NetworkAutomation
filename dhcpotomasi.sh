@@ -68,8 +68,4 @@ sudo apt install openssh-server -y
 sudo systemctl enable ssh
 sudo systemctl restart ssh
 
-# Instalasi Tambahan untuk Netmiko
-sudo apt install python3 python3-pip -y
-pip3 install netmiko
-
 echo "Konfigurasi Ubuntu selesai. DHCP Server, VLAN, IP PNET, dan NAT siap digunakan."
