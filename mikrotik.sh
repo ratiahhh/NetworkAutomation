@@ -1,25 +1,34 @@
 #!/bin/bash
 
-# IP PNET dan VLAN konfigurasi
-PNET_IP="192.168.157.130/24"
-PNET_INTERFACE="ether2"
-VLAN_ID=10
-VLAN_INTERFACE="vlan10"
-VLAN_IP="192.168.31.254/24"
+# Script Konfigurasi MikroTik dengan Netmiko
+echo "Memulai Otomasi Konfigurasi MikroTik"
 
-echo "Mengonfigurasi MikroTik..."
+cat <<EOF > mikrotik_config.py
+from netmiko import ConnectHandler
 
-cat <<EOT > mikrotik_config.rsc
-# Konfigurasi IP PNET pada $PNET_INTERFACE
-/ip address add address=$PNET_IP interface=$PNET_INTERFACE
-/interface ethernet enable $PNET_INTERFACE
+# Konfigurasi perangkat MikroTik
+mikrotik_device = {
+    'device_type': 'mikrotik_routeros',
+    'host': '192.168.157.130',  # IP PNET MikroTik
+    'username': 'admin',
+    'password': '',
+}
 
-# Buat VLAN 10 pada $PNET_INTERFACE
-/interface vlan add name=$VLAN_INTERFACE vlan-id=$VLAN_ID interface=$PNET_INTERFACE
-/ip address add address=$VLAN_IP interface=$VLAN_INTERFACE
+# Koneksi ke perangkat MikroTik
+net_connect = ConnectHandler(**mikrotik_device)
 
-# Pastikan forwarding aktif
-/ip route add gateway=192.168.31.1
-EOT
+# Konfigurasi VLAN dan IP
+commands = [
+    '/interface vlan add name=vlan10 vlan-id=10 interface=ether1',
+    '/ip address add address=192.168.31.3/24 interface=vlan10',
+    '/ip dhcp-client add interface=ether1',
+    '/ip firewall nat add chain=srcnat action=masquerade out-interface=ether1',
+]
+output = net_connect.send_config_set(commands)
+print(output)
 
-echo "Konfigurasi MikroTik selesai. Pastikan IP PNET terhubung."
+# Tutup koneksi
+net_connect.disconnect()
+EOF
+
+echo "Konfigurasi MikroTik selesai."
