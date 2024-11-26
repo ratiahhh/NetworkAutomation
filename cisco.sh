@@ -42,7 +42,4 @@ write memory
 exit
 EOT
 
-# Kirimkan konfigurasi ke Cisco Switch menggunakan telnet
-telnet <IP_CISCO> <PORT> < cisco_config.txt
-
 echo "Konfigurasi Cisco selesai. Periksa koneksi PNET dan VLAN."
