@@ -22,8 +22,4 @@ cat <<EOT > mikrotik_config.rsc
 /ip route add gateway=192.168.31.1
 EOT
 
-# Kirimkan konfigurasi ke MikroTik menggunakan SSH atau API
-scp mikrotik_config.rsc <USERNAME>@<IP_MIKROTIK>:/
-ssh <USERNAME>@<IP_MIKROTIK> "/import mikrotik_config.rsc"
-
 echo "Konfigurasi MikroTik selesai. Pastikan IP PNET terhubung."
