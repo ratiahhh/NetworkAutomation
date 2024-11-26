@@ -14,7 +14,7 @@ EOF
 
 sudo apt update
 
-# Konfigurasi Network (Netplan)
+# Konfigurasi Network (Netplan) dengan IP PNET
 cat <<EOT > /etc/netplan/01-netcfg.yaml
 network:
   version: 2
@@ -25,7 +25,7 @@ network:
     eth1:
       dhcp4: no
       addresses:
-        - 192.168.157.128/24 # Tambahkan IP PNET ke eth1
+        - 192.168.157.128/24  # IP PNET untuk eth1
   vlans:
     eth1.10:
       id: 10
@@ -34,16 +34,28 @@ network:
         - 192.168.31.1/24
 EOT
 
-# Terapkan konfigurasi Netplan
+# Terapkan konfigurasi jaringan
 echo "Menerapkan konfigurasi jaringan..."
 netplan apply
 
-# Instalasi ISC DHCP Server
-echo "Menginstal ISC DHCP Server..."
-sudo apt install isc-dhcp-server -y
+# Validasi IP Address
+echo "Validasi IP Address yang dikonfigurasi..."
+ip a
+
+# Pastikan IP Forwarding Aktif
+echo "Mengaktifkan IP forwarding..."
+sudo sed -i '/^#net.ipv4.ip_forward=1/s/^#//' /etc/sysctl.conf
+sudo sysctl -p
+
+# NAT Masquerading untuk eth0 (Internet)
+echo "Menambahkan NAT Masquerading untuk koneksi internet..."
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+sudo apt install iptables-persistent -y
 
 # Konfigurasi DHCP Server
-echo "Mengonfigurasi DHCP Server untuk VLAN..."
+echo "Menginstal dan Mengonfigurasi DHCP Server untuk VLAN..."
+sudo apt install isc-dhcp-server -y
+
 cat <<EOF | sudo tee /etc/dhcp/dhcpd.conf
 subnet 192.168.31.0 netmask 255.255.255.0 {
   range 192.168.31.2 192.168.31.254;
@@ -56,19 +68,9 @@ subnet 192.168.31.0 netmask 255.255.255.0 {
 }
 EOF
 
-# Konfigurasi ISC DHCP Server untuk VLAN
+# DHCP Server untuk VLAN
 echo 'INTERFACESv4="eth1.10"' | sudo tee /etc/default/isc-dhcp-server
 sudo systemctl restart isc-dhcp-server
-
-# Aktifkan IP Forwarding
-echo "Mengaktifkan IP forwarding..."
-sudo sed -i '/^#net.ipv4.ip_forward=1/s/^#//' /etc/sysctl.conf
-sudo sysctl -p
-
-# NAT Masquerading
-echo "Menambahkan NAT Masquerading..."
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-sudo apt install iptables-persistent -y
 
 # Instal SSH Server
 echo "Menginstal SSH Server..."
@@ -81,9 +83,14 @@ echo "Mengizinkan koneksi SSH melalui firewall..."
 sudo ufw allow ssh
 sudo ufw enable
 
-# Instalasi Tambahan untuk Netmiko
-echo "Menginstal Netmiko untuk pengaturan otomatisasi..."
-sudo apt install python3 python3-pip -y
-pip3 install netmiko
+# Tambahkan IP Static Route (PNET ke Cisco dan MikroTik)
+echo "Menambahkan static route untuk memastikan konektivitas dengan IP PNET..."
+sudo ip route add 192.168.157.129/32 dev eth1   # Route ke Cisco
+sudo ip route add 192.168.157.130/32 dev eth1   # Route ke MikroTik
 
-echo "Konfigurasi Ubuntu selesai. IP PNET, VLAN, DHCP Server, dan SSH siap digunakan."
+# Tes Konektivitas ke IP PNET
+echo "Tes konektivitas ke perangkat lain di jaringan PNET..."
+ping -c 4 192.168.157.129  # Ping Cisco
+ping -c 4 192.168.157.130  # Ping MikroTik
+
+echo "Konfigurasi Ubuntu selesai. DHCP Server, VLAN, IP PNET, dan NAT siap digunakan."
