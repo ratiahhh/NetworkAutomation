@@ -9,7 +9,7 @@ from netmiko import ConnectHandler
 # Konfigurasi perangkat Cisco
 cisco_device = {
     'device_type': 'cisco_ios',
-    'host': '192.168.157.129',  # IP PNET Cisco
+    'host': '192.168.157.128',  # IP PNET Cisco
     'username': 'admin',
     'password': 'admin',
     'secret': 'admin',  # Enable password
