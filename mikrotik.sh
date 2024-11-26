@@ -1,53 +1,29 @@
-#!/bin/sh
+#!/bin/bash
 
-apt install expect -y
-apt install telnet 
+# IP PNET dan VLAN konfigurasi
+PNET_IP="192.168.157.130/24"
+PNET_INTERFACE="ether2"
+VLAN_ID=10
+VLAN_INTERFACE="vlan10"
+VLAN_IP="192.168.31.254/24"
 
-MIKROTIK_USER="admin"
-MIKROTIK_PASS="123"
-MIKROTIK_IP="192.168.31.10"
+echo "Mengonfigurasi MikroTik..."
 
-expect << EOF
-spawn telnet $MIKROTIK_IP
-expect "login:"
-send "$MIKROTIK_USER\r"
-expect "Password:"
-send "$MIKROTIK_PASS\r"
-expect ">"
+cat <<EOT > mikrotik_config.rsc
+# Konfigurasi IP PNET pada $PNET_INTERFACE
+/ip address add address=$PNET_IP interface=$PNET_INTERFACE
+/interface ethernet enable $PNET_INTERFACE
 
-# Menambahkan DHCP Client di ether1
-send "/interface dhcp-client add interface=ether1 disabled=no\r"
-expect ">"
+# Buat VLAN 10 pada $PNET_INTERFACE
+/interface vlan add name=$VLAN_INTERFACE vlan-id=$VLAN_ID interface=$PNET_INTERFACE
+/ip address add address=$VLAN_IP interface=$VLAN_INTERFACE
 
-# Menambahkan IP address di ether2
-send "/ip address add address=192.168.200.1/24 interface=ether2\r"
-expect ">"
+# Pastikan forwarding aktif
+/ip route add gateway=192.168.31.1
+EOT
 
-# Membuat IP pool
-send "/ip pool add name=dhcp_pool ranges=192.168.200.10-192.168.200.100\r"
-expect ">"
+# Kirimkan konfigurasi ke MikroTik menggunakan SSH atau API
+scp mikrotik_config.rsc <USERNAME>@<IP_MIKROTIK>:/
+ssh <USERNAME>@<IP_MIKROTIK> "/import mikrotik_config.rsc"
 
-# Menambahkan DHCP Server
-send "/ip dhcp-server add name=dhcp1 interface=ether2 address-pool=dhcp_pool disabled=no\r"
-expect ">"
-
-# Menambahkan konfigurasi network DHCP Server
-send "/ip dhcp-server network add address=192.168.200.0/24 gateway=192.168.200.1\r"
-expect ">"
-# Menambahkan konfigurasi network DHCP Server
-send "/ip dhcp-server enable dhcp1"
-expect ">"
-
-# Menambahkan static route ke Ubuntu Server
-send "/ip route add gateway=192.168.31.1\r"
-expect ">"
-
-# Menambahkan aturan firewall NAT untuk internet sharing
-send "/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade\r"
-expect ">"
-
-
-# Keluar dari MikroTik
-send "exit\r"
-expect eof
-EOF
+echo "Konfigurasi MikroTik selesai. Pastikan IP PNET terhubung."
