@@ -1,65 +1,54 @@
 #!/bin/bash
 
-# Script Konfigurasi Cisco Switch dengan Netmiko
-echo "Memulai Otomasi Konfigurasi Cisco Switch"
+# Instalasi expect jika belum tersedia
+echo "Memastikan expect terpasang..."
+apt update && apt install -y expect
 
-cat <<EOF > cisco_config.py
-from netmiko import ConnectHandler
+# Variabel konfigurasi
+CISCO_IP="192.168.31.2"    # IP untuk Cisco Switch
+USERNAME="admin"           # Username Cisco
+PASSWORD="password"        # Password Cisco
 
-# Konfigurasi perangkat Cisco
-cisco_device = {
-    'device_type': 'cisco_ios',
-    'host': '192.168.157.129',  # IP PNET Cisco
-    'username': 'admin',
-    'password': 'admin',
-    'secret': 'admin',  # Enable password
-}
-
-# Koneksi ke perangkat Cisco
-net_connect = ConnectHandler(**cisco_device)
-net_connect.enable()
-
-# Konfigurasi Telnet dan VLAN
-commands = [
-    # Konfigurasi akses Telnet dan user credentials
-    'line vty 0 4',
-    'password admin',
-    'login',
-    'exit',
-    
-    # Konfigurasi username dan password untuk SSH/Telnet
-    'username admin privilege 15 password admin',
-    'enable secret admin',
-
-    # Aktifkan akses Telnet
-    'ip telnet source-interface vlan1',
-
-    # VLAN 10 konfigurasi
-    'vlan 10',
-    'name VLAN_10',
-    'interface vlan 10',
-    'ip address 192.168.31.2 255.255.255.0',
-    'no shutdown',
-
-    # Assign VLAN ke port
-    'interface gigabitEthernet 0/1',
-    'switchport mode access',
-    'switchport access vlan 10',
-    'exit'
-]
-
-# Kirim konfigurasi
-output = net_connect.send_config_set(commands)
-print(output)
-
-# Simpan konfigurasi
-net_connect.save_config()
-
-# Tutup koneksi
-net_connect.disconnect()
+# Skrip Expect untuk konfigurasi Cisco
+echo "Memulai konfigurasi Cisco Switch..."
+expect << EOF
+spawn telnet $CISCO_IP
+expect "Username:"
+send "$USERNAME\r"
+expect "Password:"
+send "$PASSWORD\r"
+expect ">"
+send "enable\r"
+expect "Password:"
+send "$PASSWORD\r"
+expect "#"
+send "configure terminal\r"
+expect "(config)#"
+send "vlan 10\r"
+expect "(config-vlan)#"
+send "name VLAN10\r"
+expect "(config-vlan)#"
+send "exit\r"
+expect "(config)#"
+send "interface e0/0\r"
+expect "(config-if)#"
+send "switchport mode trunk\r"
+expect "(config-if)#"
+send "exit\r"
+expect "(config)#"
+send "interface e0/1\r"
+expect "(config-if)#"
+send "switchport mode access\r"
+expect "(config-if)#"
+send "switchport access vlan 10\r"
+expect "(config-if)#"
+send "exit\r"
+expect "(config)#"
+send "end\r"
+expect "#"
+send "write memory\r"
+expect "#"
+send "exit\r"
 EOF
 
-# Jalankan Python script untuk Cisco
-python3 cisco.py
-
-echo "Konfigurasi Cisco selesai."
+echo "Konfigurasi Cisco Switch selesai!"
