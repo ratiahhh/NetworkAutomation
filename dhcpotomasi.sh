@@ -14,7 +14,7 @@ EOF
 
 sudo apt update
 
-# Konfigurasi Network (Netplan) dengan IP PNET
+# Konfigurasi Network (Netplan)
 cat <<EOT > /etc/netplan/01-netcfg.yaml
 network:
   version: 2
@@ -35,25 +35,17 @@ network:
 EOT
 
 # Terapkan konfigurasi jaringan
-echo "Menerapkan konfigurasi jaringan..."
 netplan apply
 
-# Validasi IP Address
-echo "Validasi IP Address yang dikonfigurasi..."
-ip a
-
 # Pastikan IP Forwarding Aktif
-echo "Mengaktifkan IP forwarding..."
 sudo sed -i '/^#net.ipv4.ip_forward=1/s/^#//' /etc/sysctl.conf
 sudo sysctl -p
 
 # NAT Masquerading untuk eth0 (Internet)
-echo "Menambahkan NAT Masquerading untuk koneksi internet..."
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 sudo apt install iptables-persistent -y
 
 # Konfigurasi DHCP Server
-echo "Menginstal dan Mengonfigurasi DHCP Server untuk VLAN..."
 sudo apt install isc-dhcp-server -y
 
 cat <<EOF | sudo tee /etc/dhcp/dhcpd.conf
@@ -68,29 +60,16 @@ subnet 192.168.31.0 netmask 255.255.255.0 {
 }
 EOF
 
-# DHCP Server untuk VLAN
 echo 'INTERFACESv4="eth1.10"' | sudo tee /etc/default/isc-dhcp-server
 sudo systemctl restart isc-dhcp-server
 
 # Instal SSH Server
-echo "Menginstal SSH Server..."
 sudo apt install openssh-server -y
 sudo systemctl enable ssh
 sudo systemctl restart ssh
 
-# Buka Port SSH di Firewall
-echo "Mengizinkan koneksi SSH melalui firewall..."
-sudo ufw allow ssh
-sudo ufw enable
-
-# Tambahkan IP Static Route (PNET ke Cisco dan MikroTik)
-echo "Menambahkan static route untuk memastikan konektivitas dengan IP PNET..."
-sudo ip route add 192.168.157.129/32 dev eth1   # Route ke Cisco
-sudo ip route add 192.168.157.130/32 dev eth1   # Route ke MikroTik
-
-# Tes Konektivitas ke IP PNET
-echo "Tes konektivitas ke perangkat lain di jaringan PNET..."
-ping -c 4 192.168.157.129  # Ping Cisco
-ping -c 4 192.168.157.130  # Ping MikroTik
+# Instalasi Tambahan untuk Netmiko
+sudo apt install python3 python3-pip -y
+pip3 install netmiko
 
 echo "Konfigurasi Ubuntu selesai. DHCP Server, VLAN, IP PNET, dan NAT siap digunakan."
