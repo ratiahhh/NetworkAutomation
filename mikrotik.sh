@@ -1,34 +1,30 @@
 #!/bin/bash
 
-# Script Konfigurasi MikroTik dengan Netmiko
-echo "Memulai Otomasi Konfigurasi MikroTik"
+# Instal sshpass jika belum tersedia
+echo "Memastikan sshpass terpasang..."
+apt update && apt install -y sshpass
 
-cat <<EOF > mikrotik_config.py
-from netmiko import ConnectHandler
+# Variabel konfigurasi
+MIKROTIK_IP="192.168.31.254"   # IP untuk MikroTik
+USERNAME="admin"              # Username MikroTik
+PASSWORD="password"           # Password MikroTik
 
-# Konfigurasi perangkat MikroTik
-mikrotik_device = {
-    'device_type': 'mikrotik_routeros',
-    'host': '192.168.157.130',  # IP PNET MikroTik
-    'username': 'admin',
-    'password': '',
-}
+# Skrip konfigurasi MikroTik
+echo "Mengirim konfigurasi ke MikroTik..."
+sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$MIKROTIK_IP << EOF
+/interface vlan
+add interface=ether2 name=vlan10 vlan-id=10
 
-# Koneksi ke perangkat MikroTik
-net_connect = ConnectHandler(**mikrotik_device)
+/ip address
+add address=192.168.31.254/24 interface=vlan10
 
-# Konfigurasi VLAN dan IP
-commands = [
-    '/interface vlan add name=vlan10 vlan-id=10 interface=ether1',
-    '/ip address add address=192.168.31.3/24 interface=vlan10',
-    '/ip dhcp-client add interface=ether1',
-    '/ip firewall nat add chain=srcnat action=masquerade out-interface=ether1',
-]
-output = net_connect.send_config_set(commands)
-print(output)
+/ip dhcp-client
+add interface=ether1 disabled=no
 
-# Tutup koneksi
-net_connect.disconnect()
+/ip route
+add dst-address=0.0.0.0/0 gateway=192.168.31.1
+
+/system reboot
 EOF
 
-echo "Konfigurasi MikroTik selesai."
+echo "Konfigurasi MikroTik selesai! MikroTik akan reboot untuk menerapkan konfigurasi."
