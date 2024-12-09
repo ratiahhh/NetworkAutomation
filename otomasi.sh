@@ -1,15 +1,12 @@
 #!/bin/bash
 
-# ASCII art untuk "Ban"
-echo -e "\033[1;32m======================================="
-echo "  ____              "
-echo " |  _ \             "
-echo " | |_) | __ _ _ __  "
-echo " |  _ < / _\` | '_ \ "
-echo " | |_) | (_| | | | |"
-echo " |____/ \__,_|_| |_|"
-echo "                    "
-echo "=======================================\033[0m"
+
+██████╗░░█████╗░████████╗██╗░█████╗░██╗░░██╗
+██╔══██╗██╔══██╗╚══██╔══╝██║██╔══██╗██║░░██║
+██████╔╝███████║░░░██║░░░██║███████║███████║
+██╔══██╗██╔══██║░░░██║░░░██║██╔══██║██╔══██║
+██║░░██║██║░░██║░░░██║░░░██║██║░░██║██║░░██║
+╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝
 
 # Variabel untuk progres
 PROGRES=("Menambahkan Repository Ban" "Melakukan update paket" "Mengonfigurasi netplan" "Menginstal DHCP server" \
@@ -61,7 +58,7 @@ network:
       id: 10
       link: eth1
       addresses:
-        - 192.168.20.1/24
+        - 192.168.31.1/24
 EOT
 sudo netplan apply > /dev/null 2>&1
 
@@ -72,18 +69,18 @@ sudo apt install -y isc-dhcp-server > /dev/null 2>&1
 # Konfigurasi DHCP Server
 echo -e "${GREEN}${PROGRES[4]}${NC}"
 sudo bash -c 'cat > /etc/dhcp/dhcpd.conf' << EOF > /dev/null
-subnet 192.168.20.0 netmask 255.255.255.0 {
-  range 192.168.20.2 192.168.20.254;
+subnet 192.168.31.0 netmask 255.255.255.0 {
+  range 192.168.31.2 192.168.31.254;
   option domain-name-servers 8.8.8.8;
   option subnet-mask 255.255.255.0;
-  option routers 192.168.20.1;
-  option broadcast-address 192.168.20.255;
+  option routers 192.168.31.1;
+  option broadcast-address 192.168.31.255;
   default-lease-time 600;
   max-lease-time 7200;
 
-  host Ban {
+  host RATIHH {
     hardware ethernet 00:50:79:66:68:0f;  
-    fixed-address 192.168.20.10;
+    fixed-address 192.168.31.10;
   }
 }
 EOF
@@ -140,7 +137,7 @@ fi
 
 # Konfigurasi Cisco
 echo -e "${GREEN}${PROGRES[11]}${NC}"
-CISCO_IP="192.168.234.132"
+CISCO_IP="192.168.231.132"
 CISCO_PORT="30013"
 expect <<EOF > /dev/null 2>&1
 spawn telnet $CISCO_IP $CISCO_PORT
@@ -166,16 +163,13 @@ EOF
 
 #!/bin/bash
 
-# ASCII art untuk "Ban"
-echo -e "\033[1;32m======================================="
-echo "  ____              "
-echo " |  _ \             "
-echo " | |_) | __ _ _ __  "
-echo " |  _ < / _\` | '_ \ "
-echo " | |_) | (_| | | | |"
-echo " |____/ \__,_|_| |_|"
-echo "                    "
-echo "=======================================\033[0m"
+
+██████╗░░█████╗░████████╗██╗░█████╗░██╗░░██╗
+██╔══██╗██╔══██╗╚══██╔══╝██║██╔══██╗██║░░██║
+██████╔╝███████║░░░██║░░░██║███████║███████║
+██╔══██╗██╔══██║░░░██║░░░██║██╔══██║██╔══██║
+██║░░██║██║░░██║░░░██║░░░██║██║░░██║██║░░██║
+╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝
 
 # Variabel untuk progres
 PROGRES=("Menambahkan Repository Ban" "Melakukan update paket" "Mengonfigurasi netplan" "Menginstal DHCP server" \
@@ -227,7 +221,7 @@ network:
       id: 10
       link: eth1
       addresses:
-        - 192.168.20.1/24
+        - 192.168.31.1/24
 EOT
 sudo netplan apply > /dev/null 2>&1
 
@@ -238,18 +232,18 @@ sudo apt install -y isc-dhcp-server > /dev/null 2>&1
 # Konfigurasi DHCP Server
 echo -e "${GREEN}${PROGRES[4]}${NC}"
 sudo bash -c 'cat > /etc/dhcp/dhcpd.conf' << EOF > /dev/null
-subnet 192.168.20.0 netmask 255.255.255.0 {
-  range 192.168.20.2 192.168.20.254;
+subnet 192.168.31.0 netmask 255.255.255.0 {
+  range 192.168.31.2 192.168.31.254;
   option domain-name-servers 8.8.8.8;
   option subnet-mask 255.255.255.0;
-  option routers 192.168.20.1;
-  option broadcast-address 192.168.20.255;
+  option routers 192.168.31.1;
+  option broadcast-address 192.168.31.255;
   default-lease-time 600;
   max-lease-time 7200;
 
   host Ban {
     hardware ethernet 00:50:79:66:68:0f;  
-    fixed-address 192.168.20.10;
+    fixed-address 192.168.31.10;
   }
 }
 EOF
@@ -306,7 +300,7 @@ fi
 
 # Konfigurasi Cisco
 echo -e "${GREEN}${PROGRES[11]}${NC}"
-CISCO_IP="192.168.234.132"
+CISCO_IP="192.168.235.132"
 CISCO_PORT="30013"
 expect <<EOF > /dev/null 2>&1
 spawn telnet $CISCO_IP $CISCO_PORT
@@ -331,7 +325,7 @@ EOF
 #!/usr/bin/expect
 
 # Mulai sesi telnet ke MikroTik
-spawn telnet 192.168.234.132 30016
+spawn telnet 192.168.235.132 30016
 set timeout 10
 
 # Login otomatis
