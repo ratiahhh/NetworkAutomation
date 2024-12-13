@@ -14,7 +14,7 @@ echo "╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░�
 echo -e "\033[0m" # Mengembalikan warna default
 
 # Variabel untuk progres
-PROGRES=("Menambahkan Repository Kartolo" "Melakukan update paket" "Mengonfigurasi netplan" "Menginstal DHCP server" \
+PROGRES=("Menambahkan Repository" "Melakukan update paket" "Mengonfigurasi netplan" "Menginstal DHCP server" \
          "Mengonfigurasi DHCP server" "Mengaktifkan IP Forwarding" "Mengonfigurasi Masquerade" \
          "Menginstal iptables-persistent" "Menyimpan konfigurasi iptables"  \
          "Membuat iptables NAT Service" "Menginstal Expect" "Konfigurasi Cisco" "Konfigurasi Mikrotik")
@@ -71,8 +71,8 @@ EOT
 sudo netplan apply > /dev/null 2>&1 || error_message "${PROGRES[2]}"
 
 # Instalasi ISC DHCP Server
-echo -e "${YELLOW}${PROGRES[1]}${NC}"
-sudo apt update -y || error_message "${PROGRES[1]}"
+echo -e "${YELLOW}${PROGRES[3]}${NC}"
+sudo apt-get install -y isc-dhcp-server > /dev/null 2>&1 || error_message "${PROGRES[3]}"
 
 # Konfigurasi DHCP Server
 echo -e "${YELLOW}${PROGRES[4]}${NC}"
