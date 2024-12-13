@@ -14,7 +14,7 @@ echo "╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░�
 echo -e "\033[0m" # Mengembalikan warna default
 
 # Variabel untuk progres
-PROGRES=("Menambahkan Repository Kymm" "Melakukan update paket" "Mengonfigurasi netplan" "Menginstal DHCP server" \
+PROGRES=("Menambahkan Repository Kartolo" "Melakukan update paket" "Mengonfigurasi netplan" "Menginstal DHCP server" \
          "Mengonfigurasi DHCP server" "Mengaktifkan IP Forwarding" "Mengonfigurasi Masquerade" \
          "Menginstal iptables-persistent" "Menyimpan konfigurasi iptables"  \
          "Membuat iptables NAT Service" "Menginstal Expect" "Konfigurasi Cisco" "Konfigurasi Mikrotik")
@@ -33,7 +33,7 @@ error_message() { echo -e "${RED}$1 gagal!${NC}"; exit 1; }
 # Otomasi Dimulai
 echo -e "${BLUE}Otomasi Dimulai${NC}"
 
-# Menambahkan Repository Ban
+# Menambahkan Repository
 echo -e "${YELLOW}${PROGRES[0]}${NC}"
 REPO="http://kartolo.sby.datautama.net.id/ubuntu/"                                 
 if ! grep -q "$REPO" /etc/apt/sources.list; then
@@ -72,7 +72,7 @@ sudo netplan apply > /dev/null 2>&1 || error_message "${PROGRES[2]}"
 
 # Instalasi ISC DHCP Server
 echo -e "${YELLOW}${PROGRES[3]}${NC}"
-sudo apt install -y isc-dhcp-server > /dev/null 2>&1 || error_message "${PROGRES[3]}"
+sudo apt install isc-dhcp-server > /dev/null 2>&1 || error_message "${PROGRES[3]}"
 
 # Konfigurasi DHCP Server
 echo -e "${YELLOW}${PROGRES[4]}${NC}"
