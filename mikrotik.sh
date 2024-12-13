@@ -1,37 +1,72 @@
-#!/bin/bash
+#!/usr/bin/expect
 
-# Script Konfigurasi MikroTik dengan Netmiko
-echo "Memulai Otomasi Konfigurasi MikroTik"
+# Mulai sesi telnet ke MikroTik
+spawn telnet 192.168.157.128 30023
+set timeout 10
 
-cat <<EOF > mikrotik.sh
-from netmiko import ConnectHandler
+# Login otomatis
+expect "Mikrotik Login: " { send "admin\r" }
+expect "Password: " { send "\r" }
 
-# Konfigurasi perangkat MikroTik
-mikrotik_device = {
-    'device_type': 'mikrotik_routeros',
-    'host': '192.168.157.130',  # IP PNET MikroTik
-    'username': 'admin',
-    'password': '',
+# Tangani prompt lisensi atau permintaan password baru
+expect {
+    -re "Do you want to see the software license.*" {
+        send "n\r"
+        exp_continue
+    }
+    "new password>" {
+        send "123\r"
+        expect "repeat new password>" { send "123\r" }
+    }
 }
 
-# Koneksi ke perangkat MikroTik
-net_connect = ConnectHandler(**mikrotik_device)
+# Verifikasi apakah password berhasil diubah
+expect {
+    "Password changed" {
+        puts "Password berhasil diubah."
+    }
+    "Try again, error: New passwords do not match!" {
+        puts "Error: Password tidak cocok. Ulangi pengisian password."
+        send "123\r"
+        expect "repeat new password>" { send "123\r" }
+        expect "Password changed" { puts "Password berhasil diubah." }
+    }
+    ">" {
+        puts "Login berhasil tanpa perubahan password."
+    }
+    timeout {
+        puts "Error: Timeout setelah login."
+        exit 1
+    }
+}
 
-# Konfigurasi VLAN dan IP
-commands = [
-    '/interface vlan add name=vlan10 vlan-id=10 interface=ether1',
-    '/ip address add address=192.168.31.3/24 interface=vlan10',
-    '/ip dhcp-client add interface=ether1',
-    '/ip firewall nat add chain=srcnat action=masquerade out-interface=ether1',
-]
-output = net_connect.send_config_set(commands)
-print(output)
+# Pastikan berada di prompt MikroTik sebelum melanjutkan
+expect ">" { puts "Konfigurasi MikroTik dimulai." }
 
-# Tutup koneksi
-net_connect.disconnect()
-EOF
+# Menambahkan IP Address untuk ether2
+send "/ip address add address=192.168.200.1/24 interface=ether2\r"
+expect ">" 
 
-# Jalankan konfigurasi MikroTik
-python3 mikrotik.sh
+# Menambahkan NAT Masquerade
+send "/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade\r"
+expect ">"
 
-echo "Konfigurasi MikroTik selesai."
+# Menambahkan Rute Default (Internet Gateway)
+send "/ip route add gateway=192.168.31.1\r"
+expect ">"
+
+# Menambahkan pool DHCP
+send "/ip pool add name=dhcp_pool ranges=192.168.200.2-192.168.200.100\r"
+expect ">"
+
+# Menambahkan konfigurasi DHCP server
+send "/ip dhcp-server add name=dhcp1 interface=ether2 address-pool=dhcp_pool disabled=no\r"
+expect ">"
+
+# Menambahkan konfigurasi jaringan DHCP
+send "/ip dhcp-server network add address=192.168.200.0/24 gateway=192.168.200.1 dns-server=8.8.8.8,8.8.4.4\r"
+expect ">"
+
+# Keluar dari MikroTik
+send "quit\r"
+expect eof
