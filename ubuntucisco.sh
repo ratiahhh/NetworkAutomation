@@ -128,7 +128,7 @@ fi
 ip route add 192.168.200.0/24 via 192.168.31.2
 
 # Konfigurasi Cisco
-echo -e "${YELLOW}${PROGRES[10]}${NC}"
+echo -e "${YELLOW}${PROGRES[11]}${NC}"
 CISCO_IP="192.168.157.128"
 CISCO_PORT="30021"
 expect <<EOF > /dev/null 2>&1
