@@ -71,8 +71,8 @@ EOT
 sudo netplan apply > /dev/null 2>&1 || error_message "${PROGRES[2]}"
 
 # Instalasi ISC DHCP Server
-echo -e "${YELLOW}${PROGRES[3]}${NC}"
-sudo apt install isc-dhcp-server || error_message "${PROGRES[3]}"
+echo -e "${YELLOW}${PROGRES[1]}${NC}"
+sudo apt update -y > /dev/null 2>&1 || error_message "${PROGRES[1]}"
 
 # Konfigurasi DHCP Server
 echo -e "${YELLOW}${PROGRES[4]}${NC}"
