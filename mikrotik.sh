@@ -1,7 +1,7 @@
 #!/usr/bin/expect
 
 # Mulai sesi telnet ke MikroTik
-spawn telnet 192.168.157.128 30023
+spawn telnet 192.168.157.128  30023
 set timeout 10
 
 # Login otomatis
@@ -12,7 +12,7 @@ expect "Password: " { send "\r" }
 expect {
     -re "Do you want to see the software license.*" {
         send "n\r"
-        exp_continue
+        exp_continue  # Lanjutkan untuk cek prompt berikutnya
     }
     "new password>" {
         send "123\r"
