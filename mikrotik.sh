@@ -2,7 +2,7 @@
 #!/usr/bin/expect
 
 # Mulai sesi telnet ke MikroTik
-spawn telnet 192.168.157.128 30014
+spawn telnet 192.168.157.128 30023
 set timeout 10
 
 # Login otomatis
