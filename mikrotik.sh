@@ -64,7 +64,7 @@ send "/ip dhcp-server add name=dhcp1 interface=ether2 address-pool=dhcp_pool dis
 expect ">"
 
 # Menambahkan konfigurasi jaringan DHCP
-send "/ip dhcp-server network add address=192.168.200.0/24 gateway=192.168.200.1 dns-server=8.8.8.8,8.8.4.4\r"
+send "/ip dhcp-server network add address=192.168.200.0/24 gateway=192.168.200.1 dns-server=8.8.8.8, 8.8.4.4\r"
 expect ">"
 
 # Keluar dari MikroTik
