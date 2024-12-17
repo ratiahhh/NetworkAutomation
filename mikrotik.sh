@@ -1,4 +1,3 @@
-
 #!/usr/bin/expect
 
 # Mulai sesi telnet ke MikroTik
