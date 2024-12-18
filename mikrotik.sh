@@ -1,11 +1,11 @@
 #!/usr/bin/expect
 
 # Mulai sesi telnet ke MikroTik
-spawn telnet 192.168.157.128  30023
+spawn telnet 192.168.157.128 30023
 set timeout 10
 
 # Login otomatis
-expect "Mikrotik Login: " { send "admin\r" }
+expect "Login: " { send "admin\r" }
 expect "Password: " { send "\r" }
 
 # Tangani prompt lisensi atau permintaan password baru
@@ -14,38 +14,36 @@ expect {
         send "n\r"
         exp_continue  # Lanjutkan untuk cek prompt berikutnya
     }
-    "new password>" {
+    -re "new password>" {
         send "123\r"
         expect "repeat new password>" { send "123\r" }
     }
-}
-
-# Verifikasi apakah password berhasil diubah
-expect {
     "Password changed" {
         puts "Password berhasil diubah."
-    }
-    "Try again, error: New passwords do not match!" {
-        puts "Error: Password tidak cocok. Ulangi pengisian password."
-        send "123\r"
-        expect "repeat new password>" { send "123\r" }
-        expect "Password changed" { puts "Password berhasil diubah." }
     }
     ">" {
         puts "Login berhasil tanpa perubahan password."
     }
     timeout {
-        puts "Error: Timeout setelah login."
+        puts "Error: Timeout setelah login. Periksa koneksi atau konfigurasi MikroTik."
         exit 1
     }
 }
 
 # Pastikan berada di prompt MikroTik sebelum melanjutkan
-expect ">" { puts "Konfigurasi MikroTik dimulai." }
+expect {
+    ">" {
+        puts "Konfigurasi MikroTik dimulai."
+    }
+    timeout {
+        puts "Error: Timeout setelah mencapai prompt MikroTik."
+        exit 1
+    }
+}
 
 # Menambahkan IP Address untuk ether2
 send "/ip address add address=192.168.200.1/24 interface=ether2\r"
-expect ">" 
+expect ">"
 
 # Menambahkan NAT Masquerade
 send "/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade\r"
