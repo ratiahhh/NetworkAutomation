@@ -1,56 +1,72 @@
 #!/usr/bin/expect
 
-# Variabel koneksi Mikrotik
-set mikrotik_ip "192.168.157.128"
-set mikrotik_port "30023"
-set username "admin"
-set password "123"
+# Mulai sesi telnet ke MikroTik
+spawn telnet 192.168.157.128 30023
+set timeout 10
 
-# Timeout default
-set timeout 30
+# Login otomatis
+expect "Mikrotik Login: " { send "admin\r" }
+expect "Password: " { send "\r" }
 
-# Mulai koneksi Telnet
-spawn telnet $mikrotik_ip $mikrotik_port
-
-# Menangani prompt login
+# Tangani prompt lisensi atau permintaan password baru
 expect {
-    "Login: " {
-        send "$username\r"
+    -re "Do you want to see the software license.*" {
+        send "n\r"
+        exp_continue
     }
-    timeout {
-        puts "Error: Timeout saat menunggu prompt login."
-        exit 1
+    "new password>" {
+        send "123\r"
+        expect "repeat new password>" { send "123\r" }
     }
 }
 
-# Menangani prompt password
+# Verifikasi apakah password berhasil diubah
 expect {
-    "Password: " {
-        send "$password\r"
+    "Password changed" {
+        puts "Password berhasil diubah."
     }
-    timeout {
-        puts "Error: Timeout saat menunggu prompt password."
-        exit 1
+    "Try again, error: New passwords do not match!" {
+        puts "Error: Password tidak cocok. Ulangi pengisian password."
+        send "123\r"
+        expect "repeat new password>" { send "123\r" }
+        expect "Password changed" { puts "Password berhasil diubah." }
     }
-}
-
-# Verifikasi berhasil masuk ke prompt Mikrotik
-expect {
     ">" {
-        puts "Berhasil login ke Mikrotik!"
+        puts "Login berhasil tanpa perubahan password."
     }
     timeout {
-        puts "Error: Timeout saat menunggu prompt Mikrotik setelah login."
+        puts "Error: Timeout setelah login."
         exit 1
     }
 }
 
-# Mengirim perintah konfigurasi firewall NAT
-send "ip firewall nat add chain=srcnat action=masquerade out-interface=ether1\r"
-expect ">"
-send "ip firewall nat print\r"
-expect ">"
-send "quit\r"
+# Pastikan berada di prompt MikroTik sebelum melanjutkan
+expect ">" { puts "Konfigurasi MikroTik dimulai." }
 
-# Tunggu hingga selesai
+# Menambahkan IP Address untuk ether2
+send "/ip address add address=192.168.200.1/24 interface=ether2\r"
+expect ">" 
+
+# Menambahkan NAT Masquerade
+send "/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade\r"
+expect ">"
+
+# Menambahkan Rute Default (Internet Gateway)
+send "/ip route add gateway=192.168.31.1\r"
+expect ">"
+
+# Menambahkan pool DHCP
+send "/ip pool add name=dhcp_pool ranges=192.168.200.2-192.168.200.100\r"
+expect ">"
+
+# Menambahkan konfigurasi DHCP server
+send "/ip dhcp-server add name=dhcp1 interface=ether2 address-pool=dhcp_pool disabled=no\r"
+expect ">"
+
+# Menambahkan konfigurasi jaringan DHCP
+send "/ip dhcp-server network add address=192.168.200.0/24 gateway=192.168.200.1 dns-server=8.8.8.8,8.8.4.4\r"
+expect ">"
+
+# Keluar dari MikroTik
+send "quit\r"
 expect eof
