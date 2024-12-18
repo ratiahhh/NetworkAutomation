@@ -1,14 +1,21 @@
 #!/usr/bin/expect
 
-# Mulai sesi Telnet ke MikroTik
-spawn telnet 192.168.157.128 30023
-log_user 1
-set timeout 20
+# Variabel koneksi Mikrotik
+set mikrotik_ip "192.168.157.128"
+set mikrotik_port "30023"
+set username "admin"
+set password "123"
 
-# Menangani Login
+# Timeout default
+set timeout 30
+
+# Mulai koneksi Telnet
+spawn telnet $mikrotik_ip $mikrotik_port
+
+# Menangani prompt login
 expect {
-    -re "(L|l)ogin: " { 
-        send "admin\r" 
+    "Login: " {
+        send "$username\r"
     }
     timeout {
         puts "Error: Timeout saat menunggu prompt login."
@@ -16,10 +23,10 @@ expect {
     }
 }
 
-# Menangani Password Prompt
+# Menangani prompt password
 expect {
-    -re "(P|p)assword: " {
-        send "\r"   ;# Password default kosong
+    "Password: " {
+        send "$password\r"
     }
     timeout {
         puts "Error: Timeout saat menunggu prompt password."
@@ -27,38 +34,23 @@ expect {
     }
 }
 
-# Menangani lisensi atau permintaan password baru
+# Verifikasi berhasil masuk ke prompt Mikrotik
 expect {
-    -re "Do you want to see the software license.*" {
-        send "n\r"
-        exp_continue
-    }
-    -re "new password>" {
-        send "123\r"
-        expect "repeat new password>" { send "123\r" }
-    }
-    -re ".*>" {
-        puts "Login berhasil ke MikroTik."
+    ">" {
+        puts "Berhasil login ke Mikrotik!"
     }
     timeout {
-        puts "Error: Timeout setelah login."
+        puts "Error: Timeout saat menunggu prompt Mikrotik setelah login."
         exit 1
     }
 }
 
-# Pastikan berada di prompt MikroTik sebelum melanjutkan konfigurasi
-expect ">" { puts "Memulai konfigurasi MikroTik." }
+# Mengirim perintah konfigurasi firewall NAT
+send "ip firewall nat add chain=srcnat action=masquerade out-interface=ether1\r"
+expect ">"
+send "ip firewall nat print\r"
+expect ">"
+send "quit\r"
 
-# Perintah Konfigurasi MikroTik
-
-# Menambahkan IP Address untuk ether2
-send "/ip address add address=192.168.200.1/24 interface=ether2\r"
-expect ">" { puts "IP Address untuk ether2 berhasil ditambahkan." }
-
-# Menambahkan NAT Masquerade
-send "/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade\r"
-expect ">" { puts "NAT Masquerade berhasil ditambahkan." }
-
-# Menambahkan Rute Default (Internet Gateway)
-send "/ip route add gateway=192.168.31.1\r"
-expect ">" { puts "
+# Tunggu hingga selesai
+expect eof
