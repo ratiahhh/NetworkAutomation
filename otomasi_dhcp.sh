@@ -1,6 +1,17 @@
 #!/bin/bash
 
+# Membersihkan layar
+clear
 
+# ====== Tambahkan ASCII Art di sini ======
+echo -e "\033[1;36m" # Warna Cyan
+echo "██████╗░░█████╗░████████╗██╗░█████╗░██╗░░██╗"
+echo "██╔══██╗██╔══██╗╚══██╔══╝██║██╔══██╗██║░░██║"
+echo "██████╔╝███████║░░░██║░░░██║███████║███████║"
+echo "██╔══██╗██╔══██║░░░██║░░░██║██╔══██║██╔══██║"
+echo "██║░░██║██║░░██║░░░██║░░░██║██║░░██║██║░░██║"
+echo "╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝"
+echo -e "\033[0m" # Mengembalikan warna default
 
 # Update sistem dan install DHCP server
 apt update -y
