@@ -13,6 +13,15 @@ echo "██║░░██║██║░░██║░░░██║░░�
 echo "╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝"
 echo -e "\033[0m" # Mengembalikan warna default
 
+# Cek koneksi internet
+echo "Mengecek koneksi internet..."
+ping -c 3 8.8.8.8 > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo -e "\033[1;31mTidak ada koneksi internet. Silakan periksa jaringan Anda.\033[0m"
+    exit 1
+fi
+echo -e "\033[1;32mKoneksi internet terdeteksi. Melanjutkan...\033[0m"
+
 # Update sistem dan install DHCP server
 apt update -y
 apt install isc-dhcp-server -y
@@ -54,4 +63,4 @@ EOF
 
 # Restart service dan jaringan
 systemctl restart networking
-systemctl restart isc-dhcp-server
+systemctl restart isc-dhcp-server
