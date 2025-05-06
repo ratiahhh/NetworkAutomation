@@ -3,7 +3,7 @@
 # Membersihkan layar
 clear
 
-# ====== ASCII Art ======
+# ====== Tambahkan ASCII Art di sini ======
 echo -e "\033[1;36m" # Warna Cyan
 echo "██████╗░░█████╗░████████╗██╗░█████╗░██╗░░██╗"
 echo "██╔══██╗██╔══██╗╚══██╔══╝██║██╔══██╗██║░░██║"
@@ -11,70 +11,133 @@ echo "██████╔╝███████║░░░██║░░�
 echo "██╔══██╗██╔══██║░░░██║░░░██║██╔══██║██╔══██║"
 echo "██║░░██║██║░░██║░░░██║░░░██║██║░░██║██║░░██║"
 echo "╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝"
-echo -e "\033[0m"
+echo -e "\033[0m" # Mengembalikan warna default
 
-# Mengecek koneksi internet
-echo "Mengecek koneksi internet..."
-ping -c 3 8.8.8.8 > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    echo -e "\033[1;31mTidak ada koneksi internet. Silakan periksa jaringan Anda.\033[0m"
-    exit 1
-fi
-echo -e "\033[1;32mKoneksi internet terdeteksi. Melanjutkan...\033[0m"
+# Variabel untuk progres
+PROGRES=("Menambahkan Repository" "Melakukan update paket" "Mengonfigurasi netplan" "Menginstal DHCP server" \
+         "Mengonfigurasi DHCP server" "Mengaktifkan IP Forwarding" "Mengonfigurasi Masquerade" \
+         "Menginstal iptables-persistent" "Menyimpan konfigurasi iptables"  \
+         "Membuat iptables NAT Service" "Menginstal Expect")
 
-# Menambahkan Repository Debian 10 jika belum ada
-REPO="http://kartolo.sby.datautama.net.id/debian/"
+# Warna untuk output
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+RED='\033[1;31m'
+NC='\033[0m'
+
+# Fungsi untuk pesan sukses dan gagal
+success_message() { echo -e "${GREEN}$1 berhasil!${NC}"; }
+error_message() { echo -e "${RED}$1 gagal!${NC}"; exit 1; }
+
+# Otomasi Dimulai
+echo -e "${BLUE}Otomasi Dimulai${NC}"
+
+# Menambahkan Repository
+echo -e "${YELLOW}${PROGRES[0]}${NC}"
+REPO="http://kartolo.sby.datautama.net.id/ubuntu/"                                 
 if ! grep -q "$REPO" /etc/apt/sources.list; then
     cat <<EOF | sudo tee /etc/apt/sources.list > /dev/null
-deb ${REPO} buster main contrib non-free
-deb ${REPO} buster-updates main contrib non-free
-deb ${REPO} buster-backports main contrib non-free
-deb http://security.debian.org/ buster/updates main contrib non-free
+deb http://kartolo.sby.datautama.net.id/debian/ buster main contrib non-free
+deb http://kartolo.sby.datautama.net.id/debian/ buster-updates main contrib non-free
+deb http://kartolo.sby.datautama.net.id/debian-security/ buster/updates main contrib non-free 
 EOF
-    echo -e "\033[1;33mRepository Debian 10 telah ditambahkan.\033[0m"
 fi
 
-# Update sistem dan install DHCP server
-apt update -y
-apt install isc-dhcp-server -y
+# Update Paket
+echo -e "${YELLOW}${PROGRES[1]}${NC}"
+sudo apt update -y > /dev/null 2>&1 || error_message "${PROGRES[1]}"
 
-# Konfigurasi interface DHCP
-echo 'INTERFACESv4="enp0s8"' > /etc/default/isc-dhcp-server
+# Konfigurasi IP
+echo -e "${YELLOW}${PROGRES[2]}${NC}"
+cat <<EOT | sudo tee  /etc/network/interfaces.d/* > /dev/null
 
-# Konfigurasi file dhcpd.conf
-cat > /etc/dhcp/dhcpd.conf << EOF
-default-lease-time 600;
-max-lease-time 7200;
-authoritative;
-
-subnet 10.10.20.0 netmask 255.255.255.0 {
-  range 10.10.20.10 10.10.20.100;
-  option routers 10.10.20.1;
-  option subnet-mask 255.255.255.0;
-  option domain-name-servers 8.8.8.8;
-}
-EOF
-
-# Konfigurasi IP statik
-cat > /etc/network/interfaces << EOF
+# The loopback network interface
 auto lo
 iface lo inet loopback
 
+# The primary network interface (enp0s3) with static IP
 auto enp0s3
 iface enp0s3 inet static
-    address 172.17.20.2
+    address 172.17.10.2
     netmask 255.255.255.0
-    gateway 172.17.20.1
-    dns-nameservers 8.8.8.8
+    gateway 172.17.10.1
 
+# The secondary network interface (enp0s8) with static IP
 auto enp0s8
 iface enp0s8 inet static
-    address 10.10.20.1
+    address 10.10.10.1
     netmask 255.255.255.0
 EOF
 
-# Restart jaringan dan DHCP server
-systemctl restart networking
-systemctl restart isc-dhcp-server
+echo "✅ IP address sudah dikonfigurasi."
+EOT
+systemctl restart networking > /dev/null 2>&1 || error_message "${PROGRES[2]}"
 
-echo -e "\033[1;32mKonfigurasi selesai. DHCP Server siap digunakan.\033[0m"
+# Instalasi ISC DHCP Server
+echo -e "${GREEN}${PROGRES[3]}${NC}"
+# Perbaikan paket yang rusak dan instalasi ulang jika perlu
+sudo apt --fix-broken install -y > /dev/null 2>&1 || error_message "Perbaikan paket gagal"
+if ! dpkg -l | grep -qw isc-dhcp-server; then
+    sudo apt install -y isc-dhcp-server > /dev/null 2>&1 || error_message "${PROGRES[3]}"
+else
+    success_message "${PROGRES[3]} sudah terinstal"
+fi
+
+# Konfigurasi DHCP Server
+echo -e "${YELLOW}${PROGRES[4]}${NC}"
+sudo bash -c 'cat > /etc/dhcp/dhcpd.conf' << EOF > /dev/null
+
+subnet 10.10.24.0 netmask 255.255.255.0 {
+  range 10.10.24.21 10.10.24.50;
+  option domain-name-servers 8.8.8.8;
+  option subnet-mask 255.255.255.0;
+  option routers 10.10.24.1;
+  option broadcast-address 10.10.10.255;
+  default-lease-time 600;
+  max-lease-time 7220;
+
+  host Ban {
+    hardware ethernet 08:00:27:78:89:41;  
+    fixed-address 10.10.10.1;
+  }
+}
+EOF
+echo 'INTERFACESv4="enp0s8"' | sudo tee /etc/default/isc-dhcp-server > /dev/null
+sudo systemctl restart isc-dhcp-server > /dev/null 2>&1 || error_message "${PROGRES[4]}"
+
+# Aktifkan IP Forwarding
+echo -e "${YELLOW}${PROGRES[5]}${NC}"
+sudo sed -i '/^#net.ipv4.ip_forward=1/s/^#//' /etc/sysctl.conf
+sudo sysctl -p > /dev/null 2>&1 || error_message "${PROGRES[5]}"
+
+# Konfigurasi Masquerade dengan iptables
+echo -e "${YELLOW}${PROGRES[6]}${NC}"
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE > /dev/null 2>&1 || error_message "${PROGRES[6]}"
+
+# Instalasi iptables-persistent dengan otomatisasi
+echo -e "${YELLOW}${PROGRES[7]}${NC}"
+echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections > /dev/null 2>&1
+echo iptables-persistent iptables-persistent/autosave_v6 boolean false | sudo debconf-set-selections > /dev/null 2>&1
+sudo apt install -y iptables-persistent > /dev/null 2>&1 || error_message "${PROGRES[7]}"
+
+# Menyimpan Konfigurasi iptables
+echo -e "${YELLOW}${PROGRES[8]}${NC}"
+sudo sh -c "iptables-save > /etc/iptables/rules.v4" > /dev/null 2>&1 || error_message "${PROGRES[8]}"
+sudo sh -c "ip6tables-save > /etc/iptables/rules.v6" > /dev/null 2>&1 || error_message "${PROGRES[8]}"
+
+# Instalasi Expect
+echo -e "${YELLOW}${PROGRES[9]}${NC}"
+if ! command -v expect > /dev/null; then
+    sudo apt install -y expect > /dev/null 2>&1 || error_message "${PROGRES[9]}"
+    success_message "${PROGRES[9]} berhasil"
+else
+    success_message "${PROGRES[9]} sudah terinstal"
+fi
+
+# ====== Tambahkan ASCII Art Penutup di sini ======
+echo -e "\033[1;36m" # Warna Cyan
+echo "==============================================="
+echo "             Konfigurasi Selesai!              "
+echo "==============================================="
+echo -e "\033[0m" # Mengembalikan warna default
